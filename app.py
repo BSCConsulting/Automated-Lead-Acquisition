@@ -86,6 +86,7 @@ if trigger_harvest:
     if pincode_list and segments_selected:
         with st.spinner("Harvesting business listings & verifying phone numbers..."):
             summary = run_harvester(pincode_list, segments_selected)
+            st.session_state["latest_harvest"] = summary
             st.toast(f"Harvest complete! {summary['inserted_records']} records processed.", icon="🎉")
 
 # -----------------------------------------------------------------------------
@@ -95,7 +96,7 @@ def load_leads_data() -> pd.DataFrame:
     supabase = get_supabase_client()
     if supabase:
         try:
-            response = supabase.table("leads_master").select("*").execute()
+            response = supabase.table("leads_master").select("*").order("created_at", desc=True).execute()
             if response.data:
                 return pd.DataFrame(response.data)
         except Exception:
@@ -105,7 +106,8 @@ def load_leads_data() -> pd.DataFrame:
     if os.path.exists(local_file):
         try:
             with open(local_file, "r") as f:
-                return pd.DataFrame(json.load(f))
+                df = pd.DataFrame(json.load(f))
+                return df.iloc[::-1] if not df.empty else df
         except Exception:
             pass
 
@@ -131,6 +133,26 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # TAB 1: Lead Acquisition & Data Hygiene
 # -----------------------------------------------------------------------------
 with tab1:
+    # Render Latest Harvest Dedicated Banner if active
+    if "latest_harvest" in st.session_state and st.session_state["latest_harvest"]:
+        latest = st.session_state["latest_harvest"]
+        st.success(f"🎉 **Latest Harvest Results**: {latest['inserted_records']} Leads Processed! (Duplicate Rate: {latest['duplicate_rate_pct']}%)")
+        
+        df_latest = pd.DataFrame(latest.get("records", []))
+        if not df_latest.empty:
+            cols_to_show = [c for c in ["business_name", "segment", "state", "pincode", "primary_phone", "phone_is_valid", "address_raw", "website"] if c in df_latest.columns]
+            st.dataframe(df_latest[cols_to_show], use_container_width=True, hide_index=True)
+            
+            latest_csv = df_latest.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                f"📥 Download Latest Harvest CSV ({latest['inserted_records']} Leads)",
+                data=latest_csv,
+                file_name=f"harvested_leads_{pincode_input.replace(' ', '_')}.csv",
+                mime="text/csv",
+                type="primary"
+            )
+            st.divider()
+
     col1, col2, col3, col4 = st.columns(4)
     total_leads = len(df_leads)
     if total_leads > 0:
@@ -151,14 +173,14 @@ with tab1:
 
     st.divider()
 
-    st.subheader("📋 Interactive Leads Master Grid")
+    st.subheader("📋 Master Leads Database Grid")
     if not df_leads.empty:
         filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
         with filter_col1:
             state_filter = st.multiselect("Filter State:", df_leads["state"].unique().tolist(), default=df_leads["state"].unique().tolist())
         with filter_col2:
-            pincode_options = sorted(df_leads["pincode"].astype(str).unique().tolist()) if "pincode" in df_leads.columns else []
-            pincode_filter = st.multiselect("Filter PIN Code:", pincode_options, default=pincode_options)
+            pincode_options = ["All PIN Codes"] + sorted(df_leads["pincode"].astype(str).unique().tolist()) if "pincode" in df_leads.columns else ["All PIN Codes"]
+            pincode_selected = st.selectbox("Filter PIN Code:", pincode_options, index=0)
         with filter_col3:
             segment_filter = st.multiselect("Filter Segment:", df_leads["segment"].unique().tolist(), default=df_leads["segment"].unique().tolist())
         with filter_col4:
@@ -169,8 +191,8 @@ with tab1:
         df_filtered = df_leads.copy()
         if state_filter:
             df_filtered = df_filtered[df_filtered["state"].isin(state_filter)]
-        if pincode_filter and "pincode" in df_filtered.columns:
-            df_filtered = df_filtered[df_filtered["pincode"].astype(str).isin(pincode_filter)]
+        if pincode_selected != "All PIN Codes" and "pincode" in df_filtered.columns:
+            df_filtered = df_filtered[df_filtered["pincode"].astype(str) == str(pincode_selected)]
         if segment_filter:
             df_filtered = df_filtered[df_filtered["segment"].isin(segment_filter)]
         if validity_filter == "Valid Only":
@@ -201,7 +223,7 @@ with tab1:
         )
 
         csv_data = df_filtered.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Export Cleaned Leads CSV", data=csv_data, file_name="cosmetics_leads_master.csv", mime="text/csv")
+        st.download_button("📥 Export Master Database CSV", data=csv_data, file_name="cosmetics_leads_master.csv", mime="text/csv")
     else:
         st.info("No leads recorded yet. Click 'Execute Lead Harvest' in sidebar to acquire leads.")
 
