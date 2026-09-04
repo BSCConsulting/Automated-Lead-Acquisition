@@ -153,23 +153,36 @@ with tab1:
 
     st.subheader("📋 Interactive Leads Master Grid")
     if not df_leads.empty:
-        filter_col1, filter_col2, filter_col3 = st.columns(3)
+        filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
         with filter_col1:
             state_filter = st.multiselect("Filter State:", df_leads["state"].unique().tolist(), default=df_leads["state"].unique().tolist())
         with filter_col2:
-            segment_filter = st.multiselect("Filter Segment:", df_leads["segment"].unique().tolist(), default=df_leads["segment"].unique().tolist())
+            pincode_options = sorted(df_leads["pincode"].astype(str).unique().tolist()) if "pincode" in df_leads.columns else []
+            pincode_filter = st.multiselect("Filter PIN Code:", pincode_options, default=pincode_options)
         with filter_col3:
+            segment_filter = st.multiselect("Filter Segment:", df_leads["segment"].unique().tolist(), default=df_leads["segment"].unique().tolist())
+        with filter_col4:
             validity_filter = st.radio("Phone Hygiene:", ["All", "Valid Only", "Invalid Only"], horizontal=True)
+
+        search_query = st.text_input("🔍 Search Business Name or Address:", value="", placeholder="Type business name or keyword to search...")
 
         df_filtered = df_leads.copy()
         if state_filter:
             df_filtered = df_filtered[df_filtered["state"].isin(state_filter)]
+        if pincode_filter and "pincode" in df_filtered.columns:
+            df_filtered = df_filtered[df_filtered["pincode"].astype(str).isin(pincode_filter)]
         if segment_filter:
             df_filtered = df_filtered[df_filtered["segment"].isin(segment_filter)]
         if validity_filter == "Valid Only":
             df_filtered = df_filtered[df_filtered["phone_is_valid"] == True]
         elif validity_filter == "Invalid Only":
             df_filtered = df_filtered[df_filtered["phone_is_valid"] == False]
+        if search_query:
+            q = search_query.lower()
+            df_filtered = df_filtered[
+                df_filtered["business_name"].astype(str).str.lower().str.contains(q, na=False) |
+                df_filtered["address_raw"].astype(str).str.lower().str.contains(q, na=False)
+            ]
 
         display_cols = ["business_name", "segment", "state", "pincode", "primary_phone", "phone_is_valid", "address_raw", "website", "lead_status", "dedup_hash"]
         existing_display_cols = [c for c in display_cols if c in df_filtered.columns]
