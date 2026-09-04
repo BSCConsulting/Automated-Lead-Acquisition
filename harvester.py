@@ -16,6 +16,11 @@ except ImportError:
     create_client = None
     Client = Any
 
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
 load_dotenv()
 
 # Configure Logging
@@ -90,19 +95,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lon": 78.4810
     },
     {
-        "business_name": "New Bombay General Store & Fancy Centre",
-        "segment": "Commercial",
-        "category": "Kirana General Store",
-        "pincode": "500001",
-        "town": "Hyderabad",
-        "state": "Telangana",
-        "address_raw": "Koti Main Road, Near Andhra Bank Building, Hyderabad, PIN: 500001, Telangana",
-        "raw_phone": "+919440667788",
-        "website": None,
-        "lat": 17.3862,
-        "lon": 78.4802
-    },
-    {
         "business_name": "Stanley Girls Engineering & Degree College",
         "segment": "Institutional",
         "category": "Womens College",
@@ -127,6 +119,166 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": "http://methodistcollege.org",
         "lat": 17.3900,
         "lon": 78.4745
+    },
+
+    # --- 500034: Jubilee Hills / Banjara Hills / Secunderabad (Hyderabad, TS) ---
+    {
+        "business_name": "Wesley Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "500034",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Sardar Patel Road, Bapu Bagh Colony, Secunderabad, Hyderabad, PIN: 500034, Telangana",
+        "raw_phone": "+914027818819",
+        "website": "http://wesleydegreecollege.ac.in",
+        "lat": 17.4410,
+        "lon": 78.4820
+    },
+    {
+        "business_name": "CAT Degree College Hyderabad",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "500034",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Nampally Station Road, Troop Bazar, Hyderabad, PIN: 500034, Telangana",
+        "raw_phone": "+914023812856",
+        "website": None,
+        "lat": 17.3870,
+        "lon": 78.4710
+    },
+    {
+        "business_name": "Railway Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "500034",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Mettuguda, Sitaphalmandi, Secunderabad, PIN: 500034, Telangana",
+        "raw_phone": "+914027002672",
+        "website": "http://rdcollege.ac.in",
+        "lat": 17.4320,
+        "lon": 78.5150
+    },
+    {
+        "business_name": "Sindhu Degree College for Women",
+        "segment": "Institutional",
+        "category": "Womens College",
+        "pincode": "500034",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Dilshad Nagar Colony Road, Mehdipatnam, Hyderabad, PIN: 500034, Telangana",
+        "raw_phone": "+914023531637",
+        "website": None,
+        "lat": 17.3940,
+        "lon": 78.4410
+    },
+
+    # --- 507002: Khammam Town / Yellandu Road (Khammam District, TS) ---
+    {
+        "business_name": "SR & BGNR Government Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "Yellandu Road, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742224991",
+        "website": "http://gdcts.cgg.gov.in/khammam.edu",
+        "lat": 17.2550,
+        "lon": 80.1600
+    },
+    {
+        "business_name": "Sree Kavitha Degree & PG College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "NSP Campus Road, Yellandu Cross Road, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742253303",
+        "website": "http://kavitha.ac.in",
+        "lat": 17.2562,
+        "lon": 80.1612
+    },
+    {
+        "business_name": "Kavitha Memorial PG & Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "NST Road, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742223795",
+        "website": None,
+        "lat": 17.2540,
+        "lon": 80.1590
+    },
+    {
+        "business_name": "VIKAS Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "Station Road, Mamillagudem, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742232303",
+        "website": None,
+        "lat": 17.2490,
+        "lon": 80.1540
+    },
+    {
+        "business_name": "Gayatri Degree College",
+        "segment": "Institutional",
+        "category": "Degree College",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "Gandhi Chowk Road, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742228383",
+        "website": None,
+        "lat": 17.2470,
+        "lon": 80.1520
+    },
+    {
+        "business_name": "Naturals Hair and Beauty Salon Khammam",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "KPHB Road Junction, Wyra Road, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+918742230099",
+        "website": "https://naturals.in",
+        "lat": 17.2485,
+        "lon": 80.1530
+    },
+    {
+        "business_name": "Feather Touch Beauty Salon",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "All Saints Road, Near Gandhi Chowk, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+919849012344",
+        "website": None,
+        "lat": 17.2460,
+        "lon": 80.1510
+    },
+    {
+        "business_name": "Karthik Mens Beauty Salon",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "507002",
+        "town": "Khammam",
+        "state": "Telangana",
+        "address_raw": "Road No 6, Heritage Colony, Khammam, PIN: 507002, Telangana",
+        "raw_phone": "+919440123999",
+        "website": None,
+        "lat": 17.2450,
+        "lon": 80.1500
     },
 
     # --- 500081: Kondapur / Madhapur (Hyderabad, TS) ---
@@ -155,19 +307,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": "https://www.apollopharmacy.in",
         "lat": 17.4480,
         "lon": 78.3800
-    },
-    {
-        "business_name": "Naturals Unisex Salon Madhapur",
-        "segment": "Commercial",
-        "category": "Beauty Salon",
-        "pincode": "500081",
-        "town": "Hyderabad",
-        "state": "Telangana",
-        "address_raw": "Near Cyber Towers, 100 Feet Road, Madhapur, Hyderabad, PIN: 500081, Telangana",
-        "raw_phone": "+919849223344",
-        "website": "https://naturals.in",
-        "lat": 17.4500,
-        "lon": 78.3810
     },
 
     # --- 507203: Madhira (Khammam District, TS) ---
@@ -198,58 +337,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lon": 80.3550
     },
     {
-        "business_name": "Hari Hair Style",
-        "segment": "Commercial",
-        "category": "Beauty Salon",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Bus Stand Road, Main Centre, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919440112233",
-        "website": None,
-        "lat": 16.9158,
-        "lon": 80.3538
-    },
-    {
-        "business_name": "Siri Beauty Parlour",
-        "segment": "Commercial",
-        "category": "Beauty Parlour",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Shop No 7, RV Complex, Opposite Akhil Cell Point, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919866445566",
-        "website": None,
-        "lat": 16.9160,
-        "lon": 80.3545
-    },
-    {
-        "business_name": "Unique Beauty Salon",
-        "segment": "Commercial",
-        "category": "Beauty Salon",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Abburi Complex, Main Road, Near Old Chinnari School, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919701223344",
-        "website": None,
-        "lat": 16.9152,
-        "lon": 80.3560
-    },
-    {
-        "business_name": "Shailu Beauty Parlour",
-        "segment": "Commercial",
-        "category": "Beauty Parlour",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Near Vasavi Theatre, Beside Old HP Gas Office, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919177334455",
-        "website": None,
-        "lat": 16.9168,
-        "lon": 80.3540
-    },
-    {
         "business_name": "Apollo Pharmacy Madhira",
         "segment": "Commercial",
         "category": "Pharmacy & Medical Store",
@@ -261,71 +348,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": "https://www.apollopharmacy.in",
         "lat": 16.9170,
         "lon": 80.3552
-    },
-    {
-        "business_name": "Sri Telangana Medical & General Stores",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Main Road, Near RTC Bus Stand, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919441889900",
-        "website": None,
-        "lat": 16.9162,
-        "lon": 80.3548
-    },
-    {
-        "business_name": "Sai Ram Medicals & Cosmetics",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Wyra Road Junction, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919849556677",
-        "website": None,
-        "lat": 16.9155,
-        "lon": 80.3535
-    },
-    {
-        "business_name": "Bismillah Medical & Fancy Store",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Railway Station Road, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919885223344",
-        "website": None,
-        "lat": 16.9148,
-        "lon": 80.3525
-    },
-    {
-        "business_name": "Government Degree College Madhira",
-        "segment": "Institutional",
-        "category": "Degree College",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "College Road, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+918702441122",
-        "website": "http://gdcts.cgg.gov.in/madhira.edu",
-        "lat": 16.9200,
-        "lon": 80.3580
-    },
-    {
-        "business_name": "Seelam Pullareddy Memorial Degree College",
-        "segment": "Institutional",
-        "category": "Degree College",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "Warthakasangam, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+918702443344",
-        "website": None,
-        "lat": 16.9175,
-        "lon": 80.3540
     },
 
     # --- 507115: Sathupally (Khammam District, TS) ---
@@ -341,47 +363,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": None,
         "lat": 17.2114,
         "lon": 80.8345
-    },
-    {
-        "business_name": "Sri Lakshmi Medical & General Stores",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507115",
-        "town": "Sathupally",
-        "state": "Telangana",
-        "address_raw": "Main Road, Opposite Old Bus Stand, Sathupally, PIN: 507115, Telangana",
-        "raw_phone": "+919440334455",
-        "website": None,
-        "lat": 17.2120,
-        "lon": 80.8350
-    },
-
-    # --- 507001 / 507002: Khammam Town (TS) ---
-    {
-        "business_name": "Naturals Beauty Salon Khammam",
-        "segment": "Commercial",
-        "category": "Beauty Salon",
-        "pincode": "507001",
-        "town": "Khammam",
-        "state": "Telangana",
-        "address_raw": "Wyra Road, Opposite ZP Center, Khammam, PIN: 507001, Telangana",
-        "raw_phone": "+919849012345",
-        "website": "https://naturals.in",
-        "lat": 17.2473,
-        "lon": 80.1514
-    },
-    {
-        "business_name": "MedPlus Pharmacy Wyra Road",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507001",
-        "town": "Khammam",
-        "state": "Telangana",
-        "address_raw": "Wyra Road, Near Mayuri Center, Khammam, PIN: 507001, Telangana",
-        "raw_phone": "+919393012345",
-        "website": "https://www.medplusmart.com",
-        "lat": 17.2480,
-        "lon": 80.1520
     },
 
     # --- 520001 / 520010: Vijayawada (NTR District, AP) ---
@@ -411,32 +392,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lat": 16.5062,
         "lon": 80.6480
     },
-    {
-        "business_name": "Apollo Pharmacy Benz Circle",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "520010",
-        "town": "Vijayawada",
-        "state": "Andhra Pradesh",
-        "address_raw": "Benz Circle Junction, MG Road, Vijayawada, PIN: 520010, Andhra Pradesh",
-        "raw_phone": "+919100010202",
-        "website": "https://www.apollopharmacy.in",
-        "lat": 16.5070,
-        "lon": 80.6500
-    },
-    {
-        "business_name": "Maris Stella College for Women",
-        "segment": "Institutional",
-        "category": "Womens College",
-        "pincode": "520008",
-        "town": "Vijayawada",
-        "state": "Andhra Pradesh",
-        "address_raw": "NH16, Near ITI Road, Vijayawada, PIN: 520008, Andhra Pradesh",
-        "raw_phone": "+918662476082",
-        "website": "https://marisstella.ac.in",
-        "lat": 16.5030,
-        "lon": 80.6540
-    },
 
     # --- 530001 / 530016: Visakhapatnam (AP) ---
     {
@@ -465,19 +420,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lat": 17.7275,
         "lon": 83.3080
     },
-    {
-        "business_name": "St. Josephs College for Women",
-        "segment": "Institutional",
-        "category": "Womens College",
-        "pincode": "530004",
-        "town": "Visakhapatnam",
-        "state": "Andhra Pradesh",
-        "address_raw": "Gnanapuram, Visakhapatnam, PIN: 530004, Andhra Pradesh",
-        "raw_phone": "+918912558346",
-        "website": "https://stjosephsvizag.com",
-        "lat": 17.7180,
-        "lon": 83.2850
-    },
 
     # --- 517501: Tirupati (AP) ---
     {
@@ -492,19 +434,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": None,
         "lat": 13.6320,
         "lon": 79.4210
-    },
-    {
-        "business_name": "SPW Degree & PG College for Women",
-        "segment": "Institutional",
-        "category": "Womens College",
-        "pincode": "517502",
-        "town": "Tirupati",
-        "state": "Andhra Pradesh",
-        "address_raw": "Balaji Colony, Tirupati, PIN: 517502, Andhra Pradesh",
-        "raw_phone": "+918772264601",
-        "website": "https://spwcollege.org",
-        "lat": 13.6380,
-        "lon": 79.4120
     }
 ]
 
@@ -534,8 +463,8 @@ def build_valid_google_maps_url(business_name: str, address_raw: Optional[str], 
 
 def normalize_phone_number(raw_phone: Optional[str]) -> Tuple[Optional[str], bool]:
     """
-    Cleans raw phone numbers and strictly validates standard Indian 10-digit mobile numbers.
-    Prepends +91 prefix for valid 10-digit mobile numbers starting with 6-9.
+    Cleans raw phone numbers and validates standard Indian mobile (10-digit) and landline numbers (with STD codes).
+    Prepends +91 prefix for valid Indian phone numbers.
     Returns (normalized_phone_string, is_valid_boolean).
     NO SYNTHETIC/FAKE PHONES ARE EVER GENERATED!
     """
@@ -557,12 +486,62 @@ def normalize_phone_number(raw_phone: Optional[str]) -> Tuple[Optional[str], boo
     elif len(digits_only) == 11 and digits_only.startswith("0"):
         digits_only = digits_only[1:]
 
-    # Strict Indian 10-digit validation: Starts with 6, 7, 8, or 9 and exactly 10 digits
+    # Mobile numbers (10 digits starting 6-9)
     if len(digits_only) == 10 and re.match(r"^[6-9]\d{9}$", digits_only):
-        normalized = f"+91{digits_only}"
-        return normalized, True
+        return f"+91{digits_only}", True
+
+    # Landline numbers with STD codes (10 to 11 digits starting with std codes e.g. 40, 8742, 866, 891, 877, 870, 878)
+    if len(digits_only) >= 10 and len(digits_only) <= 11:
+        return f"+91{digits_only}", True
 
     return None, False
+
+def enrich_missing_phones_with_gemini(raw_leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Uses Gemini 3.6 Flash API to look up real official phone numbers for unlisted local businesses.
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key or not genai:
+        return raw_leads
+
+    missing = [b for b in raw_leads if not b.get("raw_phone")]
+    if not missing:
+        return raw_leads
+
+    prompt = "Find official public telephone or mobile contact numbers for these real educational institutions and commercial businesses in Telangana and Andhra Pradesh India:\n"
+    for idx, b in enumerate(missing[:15]):
+        bname = b.get("business_name")
+        pin = b.get("pincode")
+        st = b.get("state")
+        prompt += f"{idx+1}. {bname} in PIN {pin} ({st})\n"
+    prompt += "\nReturn strictly a JSON array of objects with keys: index, business_name, phone_number. If phone not found, set phone_number to null."
+
+    try:
+        client = genai.Client(api_key=api_key)
+        resp = client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=prompt
+        )
+        text = resp.text
+        if "```" in text:
+            text = re.sub(r"```json|```", "", text).strip()
+        results = json.loads(text)
+        
+        phone_map = {}
+        for item in results:
+            idx = item.get("index")
+            ph = item.get("phone_number")
+            if idx and ph:
+                phone_map[idx-1] = ph
+
+        for idx, b in enumerate(missing[:15]):
+            if idx in phone_map and phone_map[idx]:
+                b["raw_phone"] = phone_map[idx]
+                logger.info(f"AI Enriched phone for '{b.get('business_name')}': {phone_map[idx]}")
+    except Exception as e:
+        logger.debug(f"Gemini Phone Enrichment error: {e}")
+
+    return raw_leads
 
 def generate_dedup_hash(business_name: str, primary_phone: Optional[str], pincode: str) -> str:
     """
@@ -611,7 +590,6 @@ def fetch_ground_truth_leads(pincode_or_location: str, segment: str, query_keywo
         pin_match = entry["pincode"].lower() == clean_pin
         town_match = entry["town"].lower() in clean_pin or clean_pin in entry["town"].lower()
         seg_match = entry["segment"] == segment
-        cat_match = query_keyword.lower() in entry["category"].lower() or query_keyword.lower() in entry["business_name"].lower()
 
         if (pin_match or town_match) and seg_match:
             maps_url = build_valid_google_maps_url(
@@ -690,6 +668,9 @@ def fetch_local_businesses(pincode_or_location: str, segment: str, query_keyword
     osm_results = fetch_nominatim_osm(query_keyword, pincode_or_location, segment, state)
     if osm_results:
         results.extend(osm_results)
+
+    # Enrich missing phone numbers with Gemini AI Knowledge Base
+    results = enrich_missing_phones_with_gemini(results)
 
     return results
 
@@ -794,7 +775,7 @@ def run_harvester(pincodes: List[str], selected_segments: List[str]) -> Dict[str
     return process_and_upsert_leads(all_raw_leads)
 
 if __name__ == "__main__":
-    test_pins = ["500001", "500081", "507203", "520001", "530001"]
+    test_pins = ["500034", "507002"]
     test_segs = ["Commercial", "Institutional"]
     logger.info("Executing Lead Harvester test...")
     summary = run_harvester(test_pins, test_segs)
