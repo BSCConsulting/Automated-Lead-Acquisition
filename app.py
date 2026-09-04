@@ -206,7 +206,7 @@ with tab1:
                 df_filtered["address_raw"].astype(str).str.lower().str.contains(q, na=False)
             ]
 
-        display_cols = ["business_name", "segment", "state", "pincode", "primary_phone", "phone_is_valid", "address_raw", "website", "lead_status", "dedup_hash"]
+        display_cols = ["business_name", "segment", "state", "pincode", "primary_phone", "phone_is_valid", "address_raw", "website", "google_maps_url", "lead_status", "dedup_hash"]
         existing_display_cols = [c for c in display_cols if c in df_filtered.columns]
 
         st.dataframe(
@@ -217,6 +217,7 @@ with tab1:
                 "primary_phone": st.column_config.TextColumn("Normalized Phone (+91)", width="small"),
                 "phone_is_valid": st.column_config.CheckboxColumn("Valid Phone?", width="small"),
                 "website": st.column_config.LinkColumn("Website", width="small"),
+                "google_maps_url": st.column_config.LinkColumn("Google Maps Link", width="medium"),
                 "dedup_hash": st.column_config.TextColumn("SHA-256 Hash", width="small")
             },
             hide_index=True
