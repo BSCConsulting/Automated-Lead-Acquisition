@@ -87,10 +87,17 @@ def generate_dedup_hash(business_name: str, primary_phone: Optional[str], pincod
     return hashlib.sha256(composite_key.encode("utf-8")).hexdigest()
 
 def get_supabase_client() -> Optional[Client]:
-    """Initializes and returns Supabase client if URL and KEY are configured."""
-    if SUPABASE_URL and SUPABASE_KEY and create_client:
+    """Initializes and returns Supabase client if valid URL and KEY are configured."""
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_KEY", "").strip()
+    
+    # Skip placeholder URLs or missing credentials
+    if not url or not key or "your-supabase" in url or "your-project-id" in url:
+        return None
+        
+    if create_client:
         try:
-            return create_client(SUPABASE_URL, SUPABASE_KEY)
+            return create_client(url, key)
         except Exception as e:
             logger.error(f"Failed to initialize Supabase client: {e}")
             return None

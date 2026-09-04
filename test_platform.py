@@ -2,19 +2,21 @@ import unittest
 import json
 import os
 import sys
+import pandas as pd
 
 # Ensure local workspace is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from harvester import normalize_phone_number, generate_dedup_hash, detect_state_from_pincode
+from harvester import normalize_phone_number, generate_dedup_hash, detect_state_from_pincode, get_supabase_client as get_harvester_supabase
 from sales_webhook import classify_inbound_intent, format_outbound_message, WHOLESALE_CATALOG_TEMPLATES
 from social_agent import generate_social_post, B2B_CAMPAIGN_TOPICS, D2C_CAMPAIGN_TOPICS
 from catalog_ingest import process_catalog_image
+from analytics_engine import calculate_lead_conversion_metrics
 
 class TestCosmeticsPlatform(unittest.TestCase):
 
     # -------------------------------------------------------------------------
-    # 1. Tests for harvester.py (Phone Normalization & Deduplication)
+    # 1. Tests for harvester.py (Phone Normalization, Hashing & State Detection)
     # -------------------------------------------------------------------------
     def test_phone_normalization_valid_10_digit(self):
         phone, is_valid = normalize_phone_number("9848012345")
@@ -43,6 +45,12 @@ class TestCosmeticsPlatform(unittest.TestCase):
     def test_state_detection_from_pincode(self):
         self.assertEqual(detect_state_from_pincode("500001"), "Telangana")
         self.assertEqual(detect_state_from_pincode("520001"), "Andhra Pradesh")
+
+    def test_supabase_client_placeholder_skipping(self):
+        os.environ["SUPABASE_URL"] = "https://your-supabase-project-id.supabase.co"
+        os.environ["SUPABASE_KEY"] = "your-supabase-key"
+        client = get_harvester_supabase()
+        self.assertIsNone(client)
 
     # -------------------------------------------------------------------------
     # 2. Tests for sales_webhook.py (Intent Classification & Template Formatting)
@@ -84,6 +92,19 @@ class TestCosmeticsPlatform(unittest.TestCase):
         self.assertEqual(post["campaign_type"], "D2C")
         self.assertIn("copy_english", post)
         self.assertIn("copy_telugu", post)
+
+    # -------------------------------------------------------------------------
+    # 4. Tests for analytics_engine.py & catalog_ingest.py
+    # -------------------------------------------------------------------------
+    def test_analytics_conversion_funnel(self):
+        sample_df = pd.DataFrame([
+            {"lead_id": "1", "segment": "Commercial", "state": "Telangana", "lead_status": "Converted"},
+            {"lead_id": "2", "segment": "Institutional", "state": "Andhra Pradesh", "lead_status": "New"}
+        ])
+        metrics = calculate_lead_conversion_metrics(sample_df)
+        self.assertEqual(metrics["total_leads"], 2)
+        self.assertEqual(metrics["conversion_rate_pct"], 50.0)
+        self.assertTrue(metrics["projected_monthly_revenue_inr"] > 0)
 
 if __name__ == "__main__":
     unittest.main()

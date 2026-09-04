@@ -31,9 +31,13 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 def get_supabase_client() -> Optional[Any]:
-    if SUPABASE_URL and SUPABASE_KEY and create_client:
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_KEY", "").strip()
+    if not url or not key or "your-supabase" in url or "your-project-id" in url:
+        return None
+    if create_client:
         try:
-            return create_client(SUPABASE_URL, SUPABASE_KEY)
+            return create_client(url, key)
         except Exception as e:
             logger.error(f"Supabase connection error: {e}")
     return None
@@ -72,7 +76,8 @@ def generate_social_post(campaign_type: str, topic: str) -> Dict[str, Any]:
     """Generates bilingual social post copy and visual prompt using Gemini API."""
     logger.info(f"Generating {campaign_type} campaign content for topic: '{topic}'")
 
-    if not GEMINI_API_KEY:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
         logger.warning("GEMINI_API_KEY not configured. Generating simulated bilingual copy.")
         if campaign_type == "B2B":
             return {
@@ -93,7 +98,7 @@ def generate_social_post(campaign_type: str, topic: str) -> Dict[str, Any]:
         prompt_text = SOCIAL_PROMPT_TEMPLATE.format(campaign_type=campaign_type, topic=topic)
         
         if genai:
-            client = genai.Client(api_key=GEMINI_API_KEY)
+            client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
                 contents=prompt_text,

@@ -31,9 +31,13 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 def get_supabase_client() -> Optional[Client]:
-    if SUPABASE_URL and SUPABASE_KEY and create_client:
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_KEY", "").strip()
+    if not url or not key or "your-supabase" in url or "your-project-id" in url:
+        return None
+    if create_client:
         try:
-            return create_client(SUPABASE_URL, SUPABASE_KEY)
+            return create_client(url, key)
         except Exception as e:
             logger.error(f"Supabase client initialization error: {e}")
     return None
