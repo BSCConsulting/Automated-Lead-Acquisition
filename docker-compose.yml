@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  streamlit_dashboard:
+    build: .
+    container_name: cosmetics_streamlit_dashboard
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  sales_webhook_api:
+    build: .
+    container_name: cosmetics_sales_webhook
+    command: uvicorn sales_webhook:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: unless-stopped

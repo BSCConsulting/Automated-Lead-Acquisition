@@ -1,0 +1,26 @@
+# Environment variables and secrets
+.env
+
+# Python virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local database and output test artifacts
+leads_master_local.json
+social_posts_pending.json
+catalog_output.csv
+raw_input/*.jpg
+raw_input/*.png
+raw_input/*.jpeg
+
+# IDE files
+.DS_Store
+.vscode/
+.idea/
