@@ -556,7 +556,7 @@ def generate_dedup_hash(business_name: str, primary_phone: Optional[str], pincod
 def get_supabase_client() -> Optional[Client]:
     """Initializes and returns Supabase client if valid URL and KEY are configured and host is reachable."""
     url = os.getenv("SUPABASE_URL", "").strip()
-    key = os.getenv("SUPABASE_KEY", "").strip()
+    key = os.getenv("SUPABASE_SECRET_KEY", "").strip() or os.getenv("SUPABASE_KEY", "").strip()
     
     # Skip placeholder URLs or missing credentials
     if not url or not key or "your-supabase" in url or "your-project-id" in url:
