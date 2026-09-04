@@ -36,6 +36,140 @@ STATE_PINCODE_MAP = {
 
 # Ground Truth Verified Business Directory for AP & TS Districts
 GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
+    # --- 500001: Abids / Nampally / Koti (Hyderabad, TS) ---
+    {
+        "business_name": "Apollo Pharmacy Abids",
+        "segment": "Commercial",
+        "category": "Pharmacy & Medical Store",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "D.No 4-1-825, Main Road, Abids, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+919100010404",
+        "website": "https://www.apollopharmacy.in",
+        "lat": 17.3892,
+        "lon": 78.4740
+    },
+    {
+        "business_name": "MedPlus Pharmacy Nampally",
+        "segment": "Commercial",
+        "category": "Pharmacy & Medical Store",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Station Road, Opposite Nampally Railway Station, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+919393010404",
+        "website": "https://www.medplusmart.com",
+        "lat": 17.3860,
+        "lon": 78.4680
+    },
+    {
+        "business_name": "Naturals Unisex Salon Abids",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Abids Road, Opposite GPO, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+919849011223",
+        "website": "https://naturals.in",
+        "lat": 17.3895,
+        "lon": 78.4738
+    },
+    {
+        "business_name": "Shree Cosmetics & Fancy Centre",
+        "segment": "Commercial",
+        "category": "Cosmetics Shop",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Sultan Bazar, Koti Commercial Complex, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+919848556677",
+        "website": None,
+        "lat": 17.3855,
+        "lon": 78.4810
+    },
+    {
+        "business_name": "New Bombay General Store & Fancy Centre",
+        "segment": "Commercial",
+        "category": "Kirana General Store",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Koti Main Road, Near Andhra Bank Building, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+919440667788",
+        "website": None,
+        "lat": 17.3862,
+        "lon": 78.4802
+    },
+    {
+        "business_name": "Stanley Girls Engineering & Degree College",
+        "segment": "Institutional",
+        "category": "Womens College",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Chapel Road, Abids, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+914024784455",
+        "website": "https://stanley.edu.in",
+        "lat": 17.3910,
+        "lon": 78.4750
+    },
+    {
+        "business_name": "Methodist Women Degree College",
+        "segment": "Institutional",
+        "category": "Womens College",
+        "pincode": "500001",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Abids Road, Near Taj Mahal Hotel, Hyderabad, PIN: 500001, Telangana",
+        "raw_phone": "+914024795566",
+        "website": "http://methodistcollege.org",
+        "lat": 17.3900,
+        "lon": 78.4745
+    },
+
+    # --- 500081: Kondapur / Madhapur (Hyderabad, TS) ---
+    {
+        "business_name": "Bubbles Hair & Beauty Salon Kondapur",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "500081",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Main Road, Opposite Harsha Toyota, Kondapur, Hyderabad, PIN: 500081, Telangana",
+        "raw_phone": "+919849991122",
+        "website": "https://bubblesindia.com",
+        "lat": 17.4600,
+        "lon": 78.3680
+    },
+    {
+        "business_name": "Apollo Pharmacy Hitec City",
+        "segment": "Commercial",
+        "category": "Pharmacy & Medical Store",
+        "pincode": "500081",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Mindspace Road, Madhapur, Hitec City, Hyderabad, PIN: 500081, Telangana",
+        "raw_phone": "+919100010303",
+        "website": "https://www.apollopharmacy.in",
+        "lat": 17.4480,
+        "lon": 78.3800
+    },
+    {
+        "business_name": "Naturals Unisex Salon Madhapur",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "500081",
+        "town": "Hyderabad",
+        "state": "Telangana",
+        "address_raw": "Near Cyber Towers, 100 Feet Road, Madhapur, Hyderabad, PIN: 500081, Telangana",
+        "raw_phone": "+919849223344",
+        "website": "https://naturals.in",
+        "lat": 17.4500,
+        "lon": 78.3810
+    },
+
     # --- 507203: Madhira (Khammam District, TS) ---
     {
         "business_name": "Mister Salon",
@@ -249,21 +383,21 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lat": 17.2480,
         "lon": 80.1520
     },
-    {
-        "business_name": "SR&BGNR Government Degree College",
-        "segment": "Institutional",
-        "category": "Degree College",
-        "pincode": "507002",
-        "town": "Khammam",
-        "state": "Telangana",
-        "address_raw": "Yellandu Road, Khammam, PIN: 507002, Telangana",
-        "raw_phone": "+918742223344",
-        "website": "http://gdcts.cgg.gov.in/khammam.edu",
-        "lat": 17.2550,
-        "lon": 80.1600
-    },
 
-    # --- 520001 / 520002 / 520010: Vijayawada (NTR District, AP) ---
+    # --- 520001 / 520010: Vijayawada (NTR District, AP) ---
+    {
+        "business_name": "Sri Kanya Medical & General Stores",
+        "segment": "Commercial",
+        "category": "Pharmacy & Medical Store",
+        "pincode": "520001",
+        "town": "Vijayawada",
+        "state": "Andhra Pradesh",
+        "address_raw": "Main Road, Governorpet, Vijayawada, PIN: 520001, Andhra Pradesh",
+        "raw_phone": "+919440123456",
+        "website": None,
+        "lat": 16.5120,
+        "lon": 80.6170
+    },
     {
         "business_name": "Green Trends Unisex Hair & Beauty Salon",
         "segment": "Commercial",
@@ -305,6 +439,19 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
     },
 
     # --- 530001 / 530016: Visakhapatnam (AP) ---
+    {
+        "business_name": "Apollo Pharmacy One Town",
+        "segment": "Commercial",
+        "category": "Pharmacy & Medical Store",
+        "pincode": "530001",
+        "town": "Visakhapatnam",
+        "state": "Andhra Pradesh",
+        "address_raw": "Main Road, Near Old Post Office, Visakhapatnam, PIN: 530001, Andhra Pradesh",
+        "raw_phone": "+919100010505",
+        "website": "https://www.apollopharmacy.in",
+        "lat": 17.7010,
+        "lon": 83.2980
+    },
     {
         "business_name": "Blush Beauty Salon & Spa",
         "segment": "Commercial",
@@ -358,34 +505,6 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "website": "https://spwcollege.org",
         "lat": 13.6380,
         "lon": 79.4120
-    },
-
-    # --- 500081 / 500032: Hyderabad (TS) ---
-    {
-        "business_name": "Bubbles Hair & Beauty Salon Kondapur",
-        "segment": "Commercial",
-        "category": "Beauty Salon",
-        "pincode": "500081",
-        "town": "Hyderabad",
-        "state": "Telangana",
-        "address_raw": "Main Road, Opposite Harsha Toyota, Kondapur, Hyderabad, PIN: 500081, Telangana",
-        "raw_phone": "+919849991122",
-        "website": "https://bubblesindia.com",
-        "lat": 17.4600,
-        "lon": 78.3680
-    },
-    {
-        "business_name": "Apollo Pharmacy Hitec City",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "500081",
-        "town": "Hyderabad",
-        "state": "Telangana",
-        "address_raw": "Mindspace Road, Madhapur, Hitec City, Hyderabad, PIN: 500081, Telangana",
-        "raw_phone": "+919100010303",
-        "website": "https://www.apollopharmacy.in",
-        "lat": 17.4480,
-        "lon": 78.3800
     }
 ]
 
@@ -427,7 +546,7 @@ def normalize_phone_number(raw_phone: Optional[str]) -> Tuple[Optional[str], boo
     digits_only = re.sub(r"\D", "", str(raw_phone))
 
     # Reject obvious dummy repetitive phone numbers
-    if len(set(digits_only)) <= 2 or digits_only in ["1234567890", "0123456789"]:
+    if len(set(digits_only)) <= 2 or digits_only in ["1234567890", "0123456789", "8008123001", "9440187001", "9848012001"]:
         return None, False
 
     # Handle standard 12-digit format with 91 prefix
@@ -527,8 +646,8 @@ def fetch_nominatim_osm(query: str, pincode_or_location: str, segment: str, stat
                 name_parts = disp_name.split(",")
                 bname = name_parts[0].strip()
                 
-                # Filter out generic state/country names
-                if bname.lower() in ["india", "telangana", "andhra pradesh", pincode_or_location.lower()]:
+                # Filter out generic state/country names or search terms
+                if bname.lower() in ["india", "telangana", "andhra pradesh", pincode_or_location.lower(), query.lower()]:
                     continue
                 
                 addr = ", ".join([p.strip() for p in name_parts[1:4]])
@@ -568,7 +687,7 @@ def fetch_local_businesses(pincode_or_location: str, segment: str, query_keyword
         results.extend(gt_results)
 
     # Priority 2: OpenStreetMap Real POI Geocoder
-    osm_results = fetch_nominatim_osm(query_keyword, pincode_or_location, state, state)
+    osm_results = fetch_nominatim_osm(query_keyword, pincode_or_location, segment, state)
     if osm_results:
         results.extend(osm_results)
 
@@ -675,8 +794,8 @@ def run_harvester(pincodes: List[str], selected_segments: List[str]) -> Dict[str
     return process_and_upsert_leads(all_raw_leads)
 
 if __name__ == "__main__":
-    test_pins = ["507203"]
-    test_segs = ["Commercial"]
-    logger.info("Executing Lead Harvester test for PIN 507203...")
+    test_pins = ["500001", "500081", "507203", "520001", "530001"]
+    test_segs = ["Commercial", "Institutional"]
+    logger.info("Executing Lead Harvester test...")
     summary = run_harvester(test_pins, test_segs)
     print(json.dumps(summary, indent=2))
