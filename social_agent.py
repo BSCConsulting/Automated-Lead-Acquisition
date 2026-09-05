@@ -28,11 +28,11 @@ logger = logging.getLogger("SocialAgent")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY", "").strip() or os.getenv("SUPABASE_KEY", "").strip()
 
 def get_supabase_client() -> Optional[Any]:
     url = os.getenv("SUPABASE_URL", "").strip()
-    key = os.getenv("SUPABASE_KEY", "").strip()
+    key = os.getenv("SUPABASE_SECRET_KEY", "").strip() or os.getenv("SUPABASE_KEY", "").strip()
     if not url or not key or "your-supabase" in url or "your-project-id" in url:
         return None
     if create_client:
@@ -100,7 +100,7 @@ def generate_social_post(campaign_type: str, topic: str) -> Dict[str, Any]:
         if genai:
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-2.5-flash",
                 contents=prompt_text,
                 config=types.GenerateContentConfig(response_mime_type="application/json")
             )

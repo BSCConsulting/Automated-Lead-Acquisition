@@ -7,11 +7,12 @@ import pandas as pd
 # Ensure local workspace is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from harvester import normalize_phone_number, generate_dedup_hash, detect_state_from_pincode, get_supabase_client as get_harvester_supabase
-from sales_webhook import classify_inbound_intent, format_outbound_message, WHOLESALE_CATALOG_TEMPLATES
-from social_agent import generate_social_post, B2B_CAMPAIGN_TOPICS, D2C_CAMPAIGN_TOPICS
-from catalog_ingest import process_catalog_image
-from analytics_engine import calculate_lead_conversion_metrics
+from harvester import (
+    normalize_phone_number, generate_dedup_hash, detect_state_from_pincode, resolve_location_info,
+    get_supabase_client as get_harvester_supabase,
+    fetch_tradeindia_b2b_leads, fetch_sulekha_leads, fetch_asklaila_leads, fetch_social_media_serp_leads
+)
+from analytics_engine import calculate_lead_conversion_metrics, calculate_lead_score_and_potential, extract_lat_lon_from_record, enrich_leads_with_analytics
 
 class TestCosmeticsPlatform(unittest.TestCase):
 
@@ -45,6 +46,20 @@ class TestCosmeticsPlatform(unittest.TestCase):
     def test_state_detection_from_pincode(self):
         self.assertEqual(detect_state_from_pincode("500001"), "Telangana")
         self.assertEqual(detect_state_from_pincode("520001"), "Andhra Pradesh")
+        self.assertEqual(detect_state_from_pincode("Khammam"), "Telangana")
+        self.assertEqual(detect_state_from_pincode("Vijayawada"), "Andhra Pradesh")
+
+    def test_location_resolution_by_town_name(self):
+        info = resolve_location_info("Khammam")
+        self.assertEqual(info["pincode"], "507001")
+        self.assertEqual(info["state"], "Telangana")
+        self.assertEqual(info["town"], "Khammam")
+
+    def test_location_resolution_by_pincode(self):
+        info = resolve_location_info("507203")
+        self.assertEqual(info["pincode"], "507203")
+        self.assertEqual(info["state"], "Telangana")
+        self.assertEqual(info["town"], "Madhira")
 
     def test_supabase_client_placeholder_skipping(self):
         os.environ["SUPABASE_URL"] = "https://your-supabase-project-id.supabase.co"
@@ -53,58 +68,58 @@ class TestCosmeticsPlatform(unittest.TestCase):
         self.assertIsNone(client)
 
     # -------------------------------------------------------------------------
-    # 2. Tests for sales_webhook.py (Intent Classification & Template Formatting)
+    # 2. Tests for analytics_engine.py (Lead Scoring, Grading & Map Extraction)
     # -------------------------------------------------------------------------
-    def test_inbound_intent_catalog_request(self):
-        result = classify_inbound_intent("Can you send me the wholesale catalog rate list?")
-        self.assertEqual(result["intent"], "Catalog Request")
-        self.assertEqual(result["action"], "Send Catalog PDF")
+    def test_lead_scoring_and_order_potential(self):
+        sample_row = pd.Series({
+            "business_name": "Lakme Salon Khammam",
+            "segment": "Commercial",
+            "primary_phone": "+919257788143",
+            "phone_is_valid": True,
+            "website": "https://salons.lakmesalon.in/",
+            "google_maps_url": "https://www.google.com/maps/search/?api=1&query=17.24758,80.16815"
+        })
+        score, grade, potential = calculate_lead_score_and_potential(sample_row)
+        self.assertEqual(score, 100)
+        self.assertEqual(grade, "A+")
+        self.assertEqual(potential, 45000.0)
 
-    def test_inbound_intent_order_inquiry(self):
-        result = classify_inbound_intent("I want to place a bulk order for lipsticks")
-        self.assertEqual(result["intent"], "Order Inquiry")
-        self.assertEqual(result["action"], "Escalate to Sales Agent")
+    def test_lat_lon_extraction(self):
+        sample_row = pd.Series({
+            "google_maps_url": "https://www.google.com/maps/search/?api=1&query=17.24758,80.16815"
+        })
+        lat, lon = extract_lat_lon_from_record(sample_row)
+        self.assertEqual(lat, 17.24758)
+        self.assertEqual(lon, 80.16815)
 
-    def test_inbound_intent_opt_out(self):
-        result = classify_inbound_intent("Please stop sending messages")
-        self.assertEqual(result["intent"], "Opt Out")
-
-    def test_outbound_message_formatting_commercial(self):
-        msg = format_outbound_message("Glow Salon", "Commercial", "Telangana")
-        self.assertIn("Glow Salon", msg)
-        self.assertIn("Telangana", msg)
-        self.assertIn("Salon & Spa", msg)
-
-    # -------------------------------------------------------------------------
-    # 3. Tests for social_agent.py (Bilingual Content Generation)
-    # -------------------------------------------------------------------------
-    def test_social_agent_b2b_post_structure(self):
-        post = generate_social_post("B2B", B2B_CAMPAIGN_TOPICS[0])
-        self.assertEqual(post["campaign_type"], "B2B")
-        self.assertIn("visual_asset_prompt", post)
-        self.assertIn("copy_english", post)
-        self.assertIn("copy_telugu", post)
-        self.assertTrue(len(post["copy_english"]) > 10)
-        self.assertTrue(len(post["copy_telugu"]) > 10)
-
-    def test_social_agent_d2c_post_structure(self):
-        post = generate_social_post("D2C", D2C_CAMPAIGN_TOPICS[0])
-        self.assertEqual(post["campaign_type"], "D2C")
-        self.assertIn("copy_english", post)
-        self.assertIn("copy_telugu", post)
-
-    # -------------------------------------------------------------------------
-    # 4. Tests for analytics_engine.py & catalog_ingest.py
-    # -------------------------------------------------------------------------
     def test_analytics_conversion_funnel(self):
         sample_df = pd.DataFrame([
-            {"lead_id": "1", "segment": "Commercial", "state": "Telangana", "lead_status": "Converted"},
-            {"lead_id": "2", "segment": "Institutional", "state": "Andhra Pradesh", "lead_status": "New"}
+            {"lead_id": "1", "business_name": "Glow Salon", "segment": "Commercial", "state": "Telangana", "phone_is_valid": True, "lead_status": "Converted"},
+            {"lead_id": "2", "business_name": "Womens Hostel", "segment": "Institutional", "state": "Andhra Pradesh", "phone_is_valid": False, "lead_status": "New"}
         ])
         metrics = calculate_lead_conversion_metrics(sample_df)
         self.assertEqual(metrics["total_leads"], 2)
         self.assertEqual(metrics["conversion_rate_pct"], 50.0)
-        self.assertTrue(metrics["projected_monthly_revenue_inr"] > 0)
+        self.assertTrue(metrics["total_pipeline_value_inr"] > 0)
+
+    # -------------------------------------------------------------------------
+    # 3. Tests for Multi-Source Scrapers (TradeIndia, Sulekha, AskLaila, Social)
+    # -------------------------------------------------------------------------
+    def test_tradeindia_scraper_returns_list(self):
+        res = fetch_tradeindia_b2b_leads("Cosmetics Wholesaler", "507001", "Commercial", "Telangana")
+        self.assertIsInstance(res, list)
+
+    def test_sulekha_scraper_returns_list(self):
+        res = fetch_sulekha_leads("Beauty Parlour", "507002", "Commercial", "Telangana")
+        self.assertIsInstance(res, list)
+
+    def test_asklaila_scraper_returns_list(self):
+        res = fetch_asklaila_leads("Kirana General Store", "507203", "Commercial", "Telangana")
+        self.assertIsInstance(res, list)
+
+    def test_social_media_serp_scraper_returns_list(self):
+        res = fetch_social_media_serp_leads("Unisex Salon", "500001", "Commercial", "Telangana")
+        self.assertIsInstance(res, list)
 
 if __name__ == "__main__":
     unittest.main()

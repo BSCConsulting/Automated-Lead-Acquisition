@@ -57,7 +57,7 @@ Return ONLY the raw valid JSON object without markdown fences or additional comm
 
 def get_supabase_client() -> Optional[Any]:
     url = os.getenv("SUPABASE_URL", "").strip()
-    key = os.getenv("SUPABASE_KEY", "").strip()
+    key = os.getenv("SUPABASE_SECRET_KEY", "").strip() or os.getenv("SUPABASE_KEY", "").strip()
     if not url or not key or "your-supabase" in url or "your-project-id" in url:
         return None
     if create_client:
@@ -96,7 +96,7 @@ def process_catalog_image(image_path: str) -> Dict[str, Any]:
         if genai:
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-2.5-flash",
                 contents=[pil_image, EXTRACTION_SYSTEM_PROMPT],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json"
