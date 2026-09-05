@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmetics B2B Lead Intelligence - Local Mini Web App</title>
+
+  <!-- Tailwind CSS & Inter Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React & Babel for Single-File Modern Web App -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Leaflet Maps CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0F172A;
+      color: #F8FAFC;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease-in-out;
+    }
+    .glass-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-blue-500 selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('directory');
+      const [leads, setLeads] = useState([]);
+      const [stats, setStats] = useState(null);
+      const [totalCount, setTotalCount] = useState(0);
+      const [loading, setLoading] = useState(true);
+
+      // Filters
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedState, setSelectedState] = useState('All');
+      const [selectedDistrict, setSelectedDistrict] = useState('All');
+      const [selectedSegment, setSelectedSegment] = useState('All');
+      const [spotlightOpen, setSpotlightOpen] = useState(false);
+
+      // Spotlight Keyboard Shortcut (Cmd + K / Ctrl + K)
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            setSpotlightOpen(prev => !prev);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, []);
+
+      // Fetch Stats
+      useEffect(() => {
+        fetch('/api/stats')
+          .then(res => res.json())
+          .then(data => setStats(data))
+          .catch(err => console.error('Error fetching stats:', err));
+      }, []);
+
+      // Fetch Leads
+      const fetchLeads = () => {
+        setLoading(true);
+        let url = `/api/leads?limit=100&q=${encodeURIComponent(searchQuery)}`;
+        if (selectedState !== 'All') url += `&state=${encodeURIComponent(selectedState)}`;
+        if (selectedDistrict !== 'All') url += `&district=${encodeURIComponent(selectedDistrict)}`;
+        if (selectedSegment !== 'All') url += `&segment=${encodeURIComponent(selectedSegment)}`;
+
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            setLeads(data.leads || []);
+            setTotalCount(data.total || 0);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error('Error fetching leads:', err);
+            setLoading(false);
+          });
+      };
+
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          fetchLeads();
+        }, 300);
+        return () => clearTimeout(timer);
+      }, [searchQuery, selectedState, selectedDistrict, selectedSegment]);
+
+      // Update Lead Status
+      const handleStatusChange = (leadId, newStatus) => {
+        fetch('/api/leads/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead_id: leadId, status: newStatus })
+        })
+        .then(res => res.json())
+        .then(() => {
+          setLeads(prev => prev.map(l => l.lead_id === leadId ? { ...l, lead_status: newStatus } : l));
+        })
+        .catch(err => console.error('Error updating status:', err));
+      };
+
+      return (
+        <div class="min-h-screen flex flex-col">
+          {/* Header */}
+          <header class="glass-panel sticky top-0 z-30 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-rose-500/20">
+                💄
+              </div>
+              <div>
+                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                  Cosmetics B2B Lead Intelligence
+                  <span class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    LOCAL ENGINE LIVE
+                  </span>
+                </h1>
+                <p class="text-xs text-slate-400">Statewide Outlet Intelligence & Instant Distribution Engine (AP & TS)</p>
+              </div>
+            </div>
+
+            {/* Global Search Bar */}
+            <div class="flex-1 max-w-md relative">
+              <input
+                type="text"
+                placeholder="Search 30,799 leads, PIN codes, towns, districts..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                class="w-full bg-slate-900/80 text-white placeholder-slate-500 pl-10 pr-16 py-2.5 rounded-xl border border-slate-700/60 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition-all"
+              />
+              <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
+              <button
+                onClick={() => setSpotlightOpen(true)}
+                class="absolute right-2 top-2 text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded-md border border-slate-700 font-mono"
+              >
+                ⌘K
+              </button>
+            </div>
+
+            {/* Quick KPI Stat Chips */}
+            <div class="flex items-center gap-3 text-xs">
+              <div class="glass-panel px-3 py-2 rounded-xl border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Total Leads</span>
+                <span class="text-white font-bold text-sm">{stats ? stats.total_leads.toLocaleString() : '30,799'}</span>
+              </div>
+              <div class="glass-panel px-3 py-2 rounded-xl border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Pipeline Potential</span>
+                <span class="text-emerald-400 font-bold text-sm">₹{stats ? (stats.total_pipeline_value_inr / 1e7).toFixed(2) + ' Cr' : '122 Cr'}</span>
+              </div>
+              <div class="glass-panel px-3 py-2 rounded-xl border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Locations</span>
+                <span class="text-blue-400 font-bold text-sm">{stats ? stats.total_locations.toLocaleString() : '1,527'} Hubs</span>
+              </div>
+            </div>
+          </header>
+
+          {/* Navigation Bar */}
+          <div class="bg-slate-900/60 border-b border-slate-800 px-6 py-2 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('directory')}
+                class={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'directory' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                🔍 Lead Directory ({totalCount.toLocaleString()})
+              </button>
+              <button
+                onClick={() => setActiveTab('kanban')}
+                class={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'kanban' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                📋 Sales Pipeline Kanban
+              </button>
+              <button
+                onClick={() => setActiveTab('map')}
+                class={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                🗺️ Territory Map Engine
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                class={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                📊 Executive Analytics
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div class="flex items-center gap-3 text-xs">
+              <select
+                value={selectedState}
+                onChange={e => setSelectedState(e.target.value)}
+                class="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none"
+              >
+                <option value="All">All States (AP & TS)</option>
+                <option value="Telangana">Telangana (33 Dist)</option>
+                <option value="Andhra Pradesh">Andhra Pradesh (26 Dist)</option>
+              </select>
+
+              <select
+                value={selectedSegment}
+                onChange={e => setSelectedSegment(e.target.value)}
+                class="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none"
+              >
+                <option value="All">All Segments</option>
+                <option value="Commercial">Commercial (Salons/Stores)</option>
+                <option value="Institutional">Institutional (Hostels/Colleges)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+            {activeTab === 'directory' && (
+              <DirectoryView
+                leads={leads}
+                loading={loading}
+                totalCount={totalCount}
+                onStatusChange={handleStatusChange}
+              />
+            )}
+            {activeTab === 'kanban' && (
+              <KanbanView
+                leads={leads}
+                onStatusChange={handleStatusChange}
+              />
+            )}
+            {activeTab === 'map' && (
+              <MapView leads={leads} />
+            )}
+            {activeTab === 'analytics' && (
+              <AnalyticsView stats={stats} />
+            )}
+          </main>
+
+          {/* Spotlight Search Modal */}
+          {spotlightOpen && (
+            <SpotlightModal
+              onClose={() => setSpotlightOpen(false)}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              leads={leads}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // DIRECTORY VIEW COMPONENT
+    // -------------------------------------------------------------------------
+    function DirectoryView({ leads, loading, totalCount, onStatusChange }) {
+      if (loading) {
+        return (
+          <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+            <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p>Filtering master database across AP & TS...</p>
+          </div>
+        );
+      }
+
+      if (leads.length === 0) {
+        return (
+          <div class="text-center py-20 glass-panel rounded-2xl p-8">
+            <div class="text-4xl mb-3">🔍</div>
+            <h3 class="text-lg font-semibold text-white">No verified leads match your current query</h3>
+            <p class="text-xs text-slate-400 mt-1">Try broadening your search term or selecting 'All States'.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div class="space-y-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Showing top <b>{leads.length}</b> verified outlet listings (from {totalCount.toLocaleString()} total matches)</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {leads.map((lead, idx) => (
+              <div key={lead.lead_id || idx} class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div>
+                  <div class="flex items-start justify-between gap-2 mb-2">
+                    <h3 class="font-bold text-white text-base leading-snug">{lead.business_name || 'Outlet / Salon'}</h3>
+                    <span class={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${lead.phone_is_valid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-700/50 text-slate-400 border-slate-600'}`}>
+                      {lead.phone_is_valid ? 'VERIFIED ✓' : 'STANDARD'}
+                    </span>
+                  </div>
+
+                  <div class="text-xs text-slate-400 space-y-1 mb-3">
+                    <p class="flex items-center gap-1 text-slate-300">
+                      <span class="text-slate-500">📍</span>
+                      <b>{lead.mandal || lead.town || 'Mandal'}</b>, {lead.district || 'District'} Dist, {lead.state || 'AP/TS'} ({lead.pincode})
+                    </p>
+                    <p class="flex items-center gap-1">
+                      <span class="text-slate-500">🏷️</span>
+                      {lead.category || lead.segment || 'Cosmetics Dealer'}
+                    </p>
+                    <p class="flex items-center gap-1">
+                      <span class="text-slate-500">📞</span>
+                      <span class="font-mono text-slate-200">{lead.primary_phone || 'N/A'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="space-y-3 pt-3 border-t border-slate-800">
+                  {/* Status Dropdown */}
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Stage:</span>
+                    <select
+                      value={lead.lead_status || 'New'}
+                      onChange={e => onStatusChange(lead.lead_id, e.target.value)}
+                      class="bg-slate-900 text-xs font-semibold text-blue-400 border border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none"
+                    >
+                      <option value="New">New Lead</option>
+                      <option value="Contacted">WhatsApp Contacted</option>
+                      <option value="Sample Sent">Sample Sent</option>
+                      <option value="Qualified">Qualified Deal</option>
+                      <option value="Wholesale Client">Wholesale Client</option>
+                    </select>
+                  </div>
+
+                  {/* Direct Action Buttons */}
+                  <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <a
+                      href={lead.whatsapp_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all text-center"
+                    >
+                      💬 WhatsApp
+                    </a>
+                    <a
+                      href={lead.map_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 transition-all text-center"
+                    >
+                      🗺️ Maps Route
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // KANBAN VIEW COMPONENT
+    // -------------------------------------------------------------------------
+    function KanbanView({ leads, onStatusChange }) {
+      const stages = ['New', 'Contacted', 'Sample Sent', 'Qualified', 'Wholesale Client'];
+
+      const getStageLeads = (stage) => {
+        return leads.filter(l => (l.lead_status || 'New').toLowerCase() === stage.toLowerCase());
+      };
+
+      return (
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+          {stages.map(stage => {
+            const stageLeads = getStageLeads(stage);
+            return (
+              <div key={stage} class="glass-panel rounded-2xl p-4 flex flex-col min-w-[260px]">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-700/60">
+                  <h3 class="font-bold text-sm text-white">{stage}</h3>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    {stageLeads.length}
+                  </span>
+                </div>
+
+                <div class="space-y-3 flex-1 overflow-y-auto max-h-[650px] pr-1">
+                  {stageLeads.length === 0 ? (
+                    <div class="text-center py-8 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                      No leads in {stage}
+                    </div>
+                  ) : (
+                    stageLeads.map((lead, idx) => (
+                      <div key={lead.lead_id || idx} class="glass-card rounded-xl p-3 text-xs space-y-2">
+                        <h4 class="font-bold text-white text-xs">{lead.business_name || 'Outlet'}</h4>
+                        <p class="text-slate-400 text-[11px]">📍 {lead.mandal || lead.town}, {lead.district}</p>
+                        
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px]">
+                          <a href={lead.whatsapp_url} target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp</a>
+                          <select
+                            value={lead.lead_status || 'New'}
+                            onChange={e => onStatusChange(lead.lead_id, e.target.value)}
+                            class="bg-slate-900 text-[10px] text-slate-300 border border-slate-700 rounded px-1.5 py-0.5"
+                          >
+                            {stages.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // MAP VIEW COMPONENT (Leaflet.js)
+    // -------------------------------------------------------------------------
+    function MapView({ leads }) {
+      const mapRef = useRef(null);
+      const leafletInstance = useRef(null);
+
+      useEffect(() => {
+        if (!mapRef.current) return;
+        if (!leafletInstance.current) {
+          // Initialize map centered at AP & TS coordinates
+          const map = L.map(mapRef.current).setView([16.5062, 80.6480], 7);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+          }).addTo(map);
+          leafletInstance.current = map;
+        }
+
+        const map = leafletInstance.current;
+        // Clear previous markers
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker) map.removeLayer(layer);
+        });
+
+        // Add markers for current leads
+        leads.slice(0, 50).forEach(lead => {
+          const lat = lead.lat || (lead.state === 'Telangana' ? 17.3850 + (Math.random() - 0.5) * 2 : 16.5062 + (Math.random() - 0.5) * 2);
+          const lon = lead.lon || (lead.state === 'Telangana' ? 78.4867 + (Math.random() - 0.5) * 2 : 80.6480 + (Math.random() - 0.5) * 2);
+
+          const marker = L.marker([lat, lon]).addTo(map);
+          const popupContent = `
+            <div style="color: #0F172A; font-family: sans-serif; font-size: 12px;">
+              <b>${lead.business_name || 'Salon'}</b><br/>
+              📍 ${lead.mandal || lead.town}, ${lead.district} Dist<br/>
+              📞 ${lead.primary_phone || 'N/A'}<br/><br/>
+              <a href="${lead.whatsapp_url}" target="_blank" style="color: #059669; font-weight: bold;">💬 Open WhatsApp</a> | 
+              <a href="${lead.map_link}" target="_blank" style="color: #2563EB; font-weight: bold;">🗺️ Maps Route</a>
+            </div>
+          `;
+          marker.bindPopup(popupContent);
+        });
+      }, [leads]);
+
+      return (
+        <div class="space-y-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>🗺️ Interactive Territory Map engine (Showing top 50 active lead pins across Telangana & Andhra Pradesh)</span>
+          </div>
+          <div ref={mapRef} class="w-full h-[600px] rounded-2xl glass-panel border border-slate-700/60 overflow-hidden shadow-2xl z-10"></div>
+        </div>
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // ANALYTICS VIEW COMPONENT
+    // -------------------------------------------------------------------------
+    function AnalyticsView({ stats }) {
+      if (!stats) return <div class="text-center py-20 text-slate-400">Loading analytics engine metrics...</div>;
+
+      return (
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-2xl">
+              <span class="text-slate-400 text-xs font-semibold uppercase">Total Master Outlets</span>
+              <h2 class="text-3xl font-extrabold text-white mt-1">{stats.total_leads.toLocaleString()}</h2>
+              <span class="text-xs text-emerald-400 mt-2 block">Across 59 Districts in AP & TS</span>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl">
+              <span class="text-slate-400 text-xs font-semibold uppercase">Phone Validity Rate</span>
+              <h2 class="text-3xl font-extrabold text-emerald-400 mt-1">{stats.phone_hygiene_pct}%</h2>
+              <span class="text-xs text-slate-400 mt-2 block">{stats.valid_phone_leads.toLocaleString()} verified phone numbers</span>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl">
+              <span class="text-slate-400 text-xs font-semibold uppercase">Est. Monthly Order Potential</span>
+              <h2 class="text-3xl font-extrabold text-blue-400 mt-1">₹{(stats.total_pipeline_value_inr / 1e7).toFixed(2)} Cr</h2>
+              <span class="text-xs text-slate-400 mt-2 block">Wholesale B2B market demand</span>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl">
+              <span class="text-slate-400 text-xs font-semibold uppercase">Registered PIN Code Hubs</span>
+              <h2 class="text-3xl font-extrabold text-purple-400 mt-1">{stats.total_locations.toLocaleString()}</h2>
+              <span class="text-xs text-slate-400 mt-2 block">Mandals & post office centers</span>
+            </div>
+          </div>
+
+          {/* Top Districts Table */}
+          <div class="glass-panel p-6 rounded-2xl">
+            <h3 class="text-base font-bold text-white mb-4">🏆 Top Revenue Districts Breakdown (AP & TS)</h3>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+              {Object.entries(stats.top_districts || {}).map(([dist, count]) => (
+                <div key={dist} class="glass-card p-3 rounded-xl flex items-center justify-between">
+                  <span class="font-medium text-slate-200">{dist}</span>
+                  <span class="font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">{count} Outlets</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // SPOTLIGHT MODAL COMPONENT
+    // -------------------------------------------------------------------------
+    function SpotlightModal({ onClose, searchQuery, setSearchQuery, leads }) {
+      return (
+        <div class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-20 p-4">
+          <div class="glass-panel w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl overflow-hidden space-y-4 p-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2 text-sm text-slate-300 w-full">
+                <span>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Spotlight Search: Type PIN code, town, salon, or district..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  autoFocus
+                  class="bg-transparent text-white w-full focus:outline-none text-base font-medium"
+                />
+              </div>
+              <button onClick={onClose} class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded">ESC</button>
+            </div>
+
+            <div class="max-h-96 overflow-y-auto space-y-2 text-xs">
+              {leads.slice(0, 8).map((lead, idx) => (
+                <div key={idx} class="glass-card p-3 rounded-xl flex items-center justify-between">
+                  <div>
+                    <h4 class="font-bold text-white">{lead.business_name}</h4>
+                    <p class="text-slate-400 text-[11px]">📍 {lead.mandal || lead.town}, {lead.district} ({lead.pincode})</p>
+                  </div>
+                  <a href={lead.whatsapp_url} target="_blank" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold">💬 Chat</a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
