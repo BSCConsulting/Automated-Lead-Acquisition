@@ -18,7 +18,7 @@ logger = logging.getLogger("MiniWebAppServer")
 app = FastAPI(
     title="AP & TS Cosmetics B2B Lead Intelligence Mini Web App",
     description="Standalone Local Mini Web App with Spotlight Search, Kanban Board, Leaflet Maps, and 1-Click WhatsApp Dispatches.",
-    version="2.0.0"
+    version="2.2.0"
 )
 
 app.add_middleware(
@@ -33,6 +33,71 @@ LEADS_DB_PATH = "leads_master_local.json"
 _cached_leads: List[Dict[str, Any]] = []
 _cached_mtime: float = 0.0
 
+def derive_district(town: str, pincode: str, state: str) -> str:
+    pin = str(pincode or '')
+    t_str = str(town or '').lower()
+    
+    if pin.startswith('500'):
+        if any(k in t_str for k in ['medchal', 'malkajgiri', 'alwal', 'kompally', 'quthbullapur', 'ecil', 'jeedimetla', 'balanagar']):
+            return 'Medchal-Malkajgiri'
+        if any(k in t_str for k in ['shamshabad', 'gachibowli', 'chandanagar', 'serilingampally', 'attapur', 'attapur', 'attapur', 'bandlaguda']):
+            return 'Rangareddy'
+        return 'Hyderabad'
+    elif pin.startswith('507'):
+        if any(k in t_str for k in ['kothagudem', 'bhadrachalam', 'palvancha', 'manuguru', 'yellandu']):
+            return 'Bhadradri Kothagudem'
+        return 'Khammam'
+    elif pin.startswith('520') or pin.startswith('521'):
+        return 'NTR (Vijayawada)'
+    elif pin.startswith('530') or pin.startswith('531'):
+        return 'Visakhapatnam'
+    elif pin.startswith('517'):
+        return 'Tirupati'
+    elif pin.startswith('503'):
+        return 'Nizamabad'
+    elif pin.startswith('505'):
+        return 'Karimnagar'
+    elif pin.startswith('506'):
+        return 'Warangal / Hanamkonda'
+    elif pin.startswith('522'):
+        return 'Guntur'
+    elif pin.startswith('518'):
+        return 'Kurnool'
+    elif pin.startswith('533'):
+        return 'Kakinada'
+    elif pin.startswith('501'):
+        return 'Rangareddy / Medchal'
+    elif pin.startswith('502'):
+        return 'Sangareddy / Siddipet'
+    elif pin.startswith('504'):
+        return 'Adilabad / Mancherial'
+    elif pin.startswith('508'):
+        return 'Nalgonda / Suryapet'
+    elif pin.startswith('509'):
+        return 'Mahabubnagar / Nagarkurnool'
+    elif town and town not in ['Local Hub', 'N/A', 'None']:
+        return town
+    return 'Telangana/AP'
+
+def resolve_record_location(lead: Dict[str, Any]) -> Dict[str, Any]:
+    pincode = str(lead.get("pincode") or "")
+    raw_town = lead.get("mandal") or lead.get("town") or ""
+    raw_dist = lead.get("district") or ""
+    state = lead.get("state") or "Telangana"
+
+    res = harvester.resolve_location_info(pincode) if pincode else None
+    resolved_town = res.get("town") if res else raw_town or "Local Area"
+    
+    lead["mandal"] = resolved_town
+    lead["town"] = resolved_town
+    
+    if not raw_dist or raw_dist in ["N/A", "None", "", "Other"]:
+        lead["district"] = derive_district(resolved_town, pincode, state)
+    else:
+        lead["district"] = raw_dist
+
+    return lead
+
 def get_master_leads() -> List[Dict[str, Any]]:
     global _cached_leads, _cached_mtime
     if os.path.exists(LEADS_DB_PATH):
@@ -40,9 +105,15 @@ def get_master_leads() -> List[Dict[str, Any]]:
             mtime = os.path.getmtime(LEADS_DB_PATH)
             if mtime > _cached_mtime or not _cached_leads:
                 with open(LEADS_DB_PATH, "r", encoding="utf-8") as f:
-                    _cached_leads = json.load(f)
+                    data = json.load(f)
+                
+                # Enrich all records with resolved mandal & district
+                for record in data:
+                    resolve_record_location(record)
+
+                _cached_leads = data
                 _cached_mtime = mtime
-                logger.info(f"Loaded {len(_cached_leads)} master leads into Mini Web App memory.")
+                logger.info(f"Loaded {len(_cached_leads)} master leads into Mini Web App memory with location resolution.")
         except Exception as e:
             logger.error(f"Error loading {LEADS_DB_PATH}: {e}")
     return _cached_leads
@@ -68,7 +139,7 @@ def get_leads(
     district: Optional[str] = Query(None, description="Filter by district name"),
     segment: Optional[str] = Query(None, description="Filter by segment (Commercial or Institutional)"),
     status: Optional[str] = Query(None, description="Filter by status (New, Contacted, Sample Sent, Qualified, Wholesale Client)"),
-    limit: int = Query(50, ge=1, le=1000),
+    limit: int = Query(60, ge=1, le=1000),
     offset: int = Query(0, ge=0)
 ):
     leads = get_master_leads()
@@ -80,7 +151,7 @@ def get_leads(
 
     if district and district.lower() != "all":
         dist_lower = district.strip().lower()
-        filtered = [l for l in filtered if dist_lower in l.get("district", "").lower() or dist_lower in l.get("town", "").lower()]
+        filtered = [l for l in filtered if dist_lower in l.get("district", "").lower() or dist_lower in l.get("mandal", "").lower() or dist_lower in l.get("town", "").lower()]
 
     if segment and segment.lower() != "all":
         seg_lower = segment.strip().lower()
@@ -103,7 +174,7 @@ def get_leads(
     # Enrich lead records with WhatsApp URLs & Maps URLs
     for lead in paged:
         name = lead.get("business_name", "Salon / Store")
-        mandal = lead.get("mandal") or lead.get("town") or "Location"
+        mandal = lead.get("mandal") or lead.get("town") or "Local Area"
         state_val = lead.get("state") or "AP/TS"
         phone = str(lead.get("primary_phone") or "")
         
@@ -133,13 +204,13 @@ def get_stats():
     ap_count = sum(1 for l in leads if l.get("state") == "Andhra Pradesh")
     valid_phones = sum(1 for l in leads if l.get("phone_is_valid"))
     
-    # Calculate pipeline value
     total_val = 0.0
     district_counts = {}
     for l in leads:
         bname = str(l.get("business_name", "")).lower()
         seg = str(l.get("segment", ""))
-        dist = str(l.get("district") or l.get("town") or "Other")
+        dist = str(l.get("district") or "Other")
+
         district_counts[dist] = district_counts.get(dist, 0) + 1
         
         if seg == "Institutional":
@@ -151,7 +222,7 @@ def get_stats():
         else:
             total_val += 15000.0
 
-    top_districts = dict(sorted(district_counts.items(), key=lambda x: x[1], reverse=True)[:10])
+    top_districts = dict(sorted(district_counts.items(), key=lambda x: x[1], reverse=True)[:15])
 
     return {
         "total_leads": len(leads),
@@ -168,7 +239,6 @@ def get_stats():
 def update_status(payload: LeadStatusUpdate):
     success = analytics_engine.update_lead_status(payload.lead_id, payload.status)
     if success:
-        # Reload leads in memory
         get_master_leads()
         return {"status": "success", "lead_id": payload.lead_id, "new_status": payload.status}
     else:
