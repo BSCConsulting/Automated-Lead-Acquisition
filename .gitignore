@@ -13,7 +13,6 @@ __pycache__/
 *$py.class
 
 # Local database and output test artifacts
-leads_master_local.json
 social_posts_pending.json
 catalog_output.csv
 raw_input/*.jpg

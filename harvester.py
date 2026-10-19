@@ -894,45 +894,48 @@ GROUND_TRUTH_DIRECTORY: List[Dict[str, Any]] = [
         "lon": 78.3800
     },
 
-    # --- 507203: Madhira (Khammam District, TS) ---
+    # --- 507203: Madhira (Khammam District, TS - 100% Verified Live) ---
     {
-        "business_name": "Mister Salon",
+        "business_name": "Unique Beauty salon with ac",
         "segment": "Commercial",
         "category": "Beauty Salon",
         "pincode": "507203",
         "town": "Madhira",
         "state": "Telangana",
-        "address_raw": "KJR Complex, Warthakasangam, near Seelampullareddy Degree College, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919848123456",
+        "address_raw": "Abburi complex babatempl, old chinnari school, Main Rd, Madhira, PIN: 507203, Telangana",
+        "raw_phone": "+916302997446",
         "website": None,
-        "lat": 16.9172,
-        "lon": 80.3542
+        "lat": 16.9222671,
+        "lon": 80.3619285,
+        "google_maps_url": "https://maps.google.com/?cid=14094643253518677229"
     },
     {
-        "business_name": "Manvis Beauty World",
+        "business_name": "Mister salon",
+        "segment": "Commercial",
+        "category": "Beauty Salon",
+        "pincode": "507203",
+        "town": "Madhira",
+        "state": "Telangana",
+        "address_raw": "Mister salon, KJR complex WARTHAKASANGAM, near selampulareddy degree college, Madhira, PIN: 507203, Telangana",
+        "raw_phone": "+918179392856",
+        "website": None,
+        "lat": 16.9204,
+        "lon": 80.3621,
+        "google_maps_url": "https://maps.google.com/?cid=17314864927773996013"
+    },
+    {
+        "business_name": "Manvi's Beauty World",
         "segment": "Commercial",
         "category": "Beauty Parlour",
         "pincode": "507203",
         "town": "Madhira",
         "state": "Telangana",
-        "address_raw": "Prakasham Road, Opposite RTC Bus Stand, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919949876543",
+        "address_raw": "Prakasham Road, Madhira, PIN: 507203, Telangana",
+        "raw_phone": "+919059502332",
         "website": None,
-        "lat": 16.9165,
-        "lon": 80.3550
-    },
-    {
-        "business_name": "Apollo Pharmacy Madhira",
-        "segment": "Commercial",
-        "category": "Pharmacy & Medical Store",
-        "pincode": "507203",
-        "town": "Madhira",
-        "state": "Telangana",
-        "address_raw": "D.No 10-18, Miriyala Complex, Main Road, Madhira, PIN: 507203, Telangana",
-        "raw_phone": "+919100010101",
-        "website": "https://www.apollopharmacy.in",
-        "lat": 16.9170,
-        "lon": 80.3552
+        "lat": 16.9189,
+        "lon": 80.3615,
+        "google_maps_url": "https://maps.google.com/?cid=14434504131849804583"
     },
 
     # --- 507115: Sathupally (Khammam District, TS) ---
@@ -2893,12 +2896,18 @@ def detect_state_from_pincode(pincode_or_location: str) -> str:
     loc_info = resolve_location_info(pincode_or_location)
     return loc_info["state"]
 
-def build_valid_google_maps_url(business_name: str, address_raw: Optional[str], pincode: str, state: str, lat: Optional[float] = None, lon: Optional[float] = None) -> str:
+def build_valid_google_maps_url(business_name: str, address_raw: Optional[str], pincode: str, state: str, lat: Optional[float] = None, lon: Optional[float] = None, place_id: Optional[str] = None, official_url: Optional[str] = None) -> str:
     """
-    Constructs a standard, verified Google Maps Search URL.
-    If exact lat/lon are provided, creates exact coordinate pin drop link.
-    Otherwise creates standard Google Maps Place Search URL.
+    Constructs an authentic Google Maps URL.
+    1. If official_url (e.g. cid link) is provided, uses that.
+    2. If place_id is provided, creates official Place ID link.
+    3. If exact lat/lon are provided, creates exact coordinate pin drop link.
+    4. Otherwise creates standard Google Maps Place Search URL.
     """
+    if official_url and ("google.com/maps" in official_url or "maps.google.com" in official_url):
+        return official_url
+    if place_id:
+        return f"https://www.google.com/maps/place/?q=place_id:{place_id}"
     if lat is not None and lon is not None:
         return f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
     
@@ -3118,7 +3127,7 @@ def fetch_nominatim_osm(query: str, pincode_or_location: str, segment: str, stat
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_google_places_api(query_keyword: str, pincode_or_location: str, segment: str, state: str) -> List[Dict[str, Any]]:
-    """Fetches live places from Google Places TextSearch API and Place Details API for phone & website in parallel."""
+    """Fetches live verified places from Google Places TextSearch API and Place Details API for phone & official map URL."""
     key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
     if not key or "AIzaSy" not in key:
         return []
@@ -3129,7 +3138,7 @@ def fetch_google_places_api(query_keyword: str, pincode_or_location: str, segmen
     results = []
 
     try:
-        resp = requests.get(url, params=params, timeout=4)
+        resp = requests.get(url, params=params, timeout=6)
         if resp.status_code == 200:
             data = resp.json()
             if data.get("status") == "OK":
@@ -3145,34 +3154,51 @@ def fetch_google_places_api(query_keyword: str, pincode_or_location: str, segmen
                     
                     phone = None
                     website = None
+                    official_url = None
+                    rating = item.get("rating")
+                    user_ratings_total = item.get("user_ratings_total", 0)
 
                     if place_id:
                         try:
                             det_url = "https://maps.googleapis.com/maps/api/place/details/json"
                             det_params = {
                                 "place_id": place_id,
-                                "fields": "formatted_phone_number,international_phone_number,website",
+                                "fields": "formatted_phone_number,international_phone_number,website,url,rating,user_ratings_total,formatted_address",
                                 "key": key
                             }
-                            det_resp = requests.get(det_url, params=det_params, timeout=2)
+                            det_resp = requests.get(det_url, params=det_params, timeout=4)
                             if det_resp.status_code == 200:
                                 det_data = det_resp.json().get("result", {})
                                 phone = det_data.get("international_phone_number") or det_data.get("formatted_phone_number")
                                 website = det_data.get("website")
+                                official_url = det_data.get("url")
+                                if det_data.get("formatted_address"):
+                                    addr = det_data.get("formatted_address")
+                                if det_data.get("rating"):
+                                    rating = det_data.get("rating")
+                                if det_data.get("user_ratings_total"):
+                                    user_ratings_total = det_data.get("user_ratings_total")
                         except Exception:
                             pass
                     
-                    maps_url = build_valid_google_maps_url(bname, addr, pincode_or_location, state, lat, lon)
+                    maps_url = build_valid_google_maps_url(bname, addr, pincode_or_location, state, lat, lon, place_id=place_id, official_url=official_url)
                     
                     return {
+                        "place_id": place_id,
                         "business_name": bname,
                         "segment": segment,
+                        "category": query_keyword,
                         "state": state,
                         "pincode": pincode_or_location,
                         "address_raw": addr,
                         "raw_phone": phone,
                         "website": website,
-                        "google_maps_url": maps_url
+                        "rating": rating,
+                        "user_ratings_total": user_ratings_total,
+                        "lat": lat,
+                        "lon": lon,
+                        "google_maps_url": maps_url,
+                        "acquisition_source": "google_places_verified_live"
                     }
 
                 with ThreadPoolExecutor(max_workers=10) as executor:
@@ -3417,87 +3443,15 @@ def fetch_social_media_serp_leads(query_keyword: str, pincode_or_location: str, 
 
 def generate_dynamic_town_leads(pincode_or_location: str, segment: str, query_keyword: str) -> List[Dict[str, Any]]:
     """
-    Generates structured, geocoded commercial & institutional business leads
-    for any town/location in Andhra Pradesh or Telangana across multiple sub-localities.
+    DEPRECATED: Synthetic lead generation has been permanently disabled.
+    All leads must be authentic and verified via Google Places API or verified ground truth.
     """
-    loc_info = resolve_location_info(pincode_or_location)
-    town = loc_info["town"]
-    pincode = loc_info["pincode"]
-    state = loc_info["state"]
-
-    results = []
-    
-    # Sub-locality mapping for major regional hubs
-    town_lower = town.lower()
-    if "khammam" in town_lower:
-        localities = ["Kaman Bazar", "Wyra Road", "Mamillagudem", "Burhanpuram", "VDO's Colony", "NST Road", "Bank Colony", "Trunk Road", "Gandhi Chowk", "Mayuri Centre", "Mustafa Nagar", "Jubilee Club Road", "Kasba Bazaar", "Rotary Nagar", "Khanapuram"]
-    elif "warangal" in town_lower or "hanamkonda" in town_lower:
-        localities = ["Chowrasta", "Subedari", "Nakkalagutta", "JPN Road", "Kazipet Junction", "Hanamkonda Main Road", "Balasamudram", "Kumarpally"]
-    elif "vijayawada" in town_lower:
-        localities = ["MG Road", "Governorpet", "Edupugallu", "Benz Circle", "One Town", "Patamata", "Satyanarayanapuram", "Eluru Road"]
-    elif "visakhapatnam" in town_lower or "vizag" in town_lower:
-        localities = ["Dwaraka Nagar", "Gajuwaka", "Jagadamba Junction", "Siripuram", "MVP Colony", "One Town", "NAD X Road", "Rushikonda"]
-    elif "hyderabad" in town_lower or "secunderabad" in town_lower:
-        localities = ["Abids", "Banjara Hills", "Jubilee Hills", "Kondapur", "Madhapur", "Kukatpally", "Dilsukhnagar", "Secunderabad Station Road", "Himayatnagar", "Ameerpet"]
-    else:
-        localities = ["Main Bazaar Road", "RTC Bus Stand Road", "Bypass Road Junction", "Station Road Commercial Complex", "Clock Tower Center", "Nehru Bazaar", "Hospital Road Arch", "Court Road"]
-
-    if segment == "Commercial":
-        outlet_patterns = [
-            ("Naturals Unisex Salon & Spa", "Beauty Salon"),
-            ("Green Trends Hair & Style Studio", "Beauty Salon"),
-            ("Lakme Beauty Studio & Makeovers", "Beauty Parlour"),
-            ("Manasvi Beauty Parlour & Hair Spa", "Beauty Parlour"),
-            ("Venus Family Salon & Bridal Care", "Beauty Salon"),
-            ("Sri Balaji Hairstyle & Gents Salon", "Beauty Salon"),
-            ("Apollo Pharmacy & Personal Care", "Pharmacy & Medical Store"),
-            ("MedPlus Pharmacy & Cosmetics Section", "Pharmacy & Medical Store"),
-            ("Shree Cosmetics Wholesale & Retail", "Cosmetics Shop"),
-            ("Mahalaxmi Ladies Corner & Fancy Stores", "Cosmetics Shop"),
-            ("Aniq Makeovers & Beauty Zone", "Beauty Parlour"),
-            ("Sri Raasi Herbal Skincare & Parlour", "Beauty Parlour"),
-            ("New Max Hair Styles", "Beauty Salon"),
-            ("Royal Hair Dressing & Beauty Clinic", "Beauty Salon"),
-            ("Siri Makeover & Bridal Studio", "Beauty Parlour")
-        ]
-    else:
-        outlet_patterns = [
-            ("Government Degree & PG College for Women", "Womens College"),
-            ("Sri Chaitanya Junior & Degree College", "Degree College"),
-            ("Narayana Womens Degree College", "Womens College"),
-            ("Kakatiya Womens Hostel & Campus", "Womens Hostel"),
-            ("Mamata Nursing & Medical College", "Medical College")
-        ]
-
-    phone_bases = ["9848", "9440", "9849", "9393", "9949", "9100", "7989", "9490"]
-    pin_num = int(re.sub(r'\D', '', str(pincode))) if str(pincode).isdigit() else sum(ord(c) for c in town)
-
-    for idx, (name_prefix, cat) in enumerate(outlet_patterns):
-        loc_name = localities[idx % len(localities)]
-        full_name = f"{name_prefix} - {loc_name}, {town}"
-        full_addr = f"{loc_name}, {town}, PIN: {pincode}, {state}"
-        phone_offset = (pin_num * 137 + idx * 997 + 100000) % 899999 + 100000
-        phone_num = f"+91{phone_bases[(idx + pin_num) % len(phone_bases)]}{phone_offset:06d}"
-        maps_url = build_valid_google_maps_url(full_name, full_addr, pincode, state)
-
-        results.append({
-            "business_name": full_name,
-            "segment": segment,
-            "category": cat,
-            "state": state,
-            "pincode": pincode,
-            "address_raw": full_addr,
-            "raw_phone": phone_num,
-            "website": f"https://www.{re.sub(r'[^a-z]', '', name_prefix.lower())}.in" if any(k in name_prefix for k in ["Naturals", "Apollo", "MedPlus", "Lakme"]) else None,
-            "google_maps_url": maps_url
-        })
-
-    return results
+    return []
 
 def fetch_local_businesses(pincode_or_location: str, segment: str, query_keyword: str) -> List[Dict[str, Any]]:
     """
     Multi-source business harvester for Andhra Pradesh and Telangana:
-    1. Google Places API (Live TextSearch API & Place Details for phone & website)
+    1. Google Places API (Live TextSearch API & Place Details for real phone & official map URL)
     2. Justdial Regional Store Directory Scraper
     3. IndiaMART B2B Supplier Registry Scraper
     4. TradeIndia Wholesale Directory Scraper
@@ -3506,7 +3460,6 @@ def fetch_local_businesses(pincode_or_location: str, segment: str, query_keyword
     7. Social Media (Instagram / Facebook Business Bio & Contact Scraper)
     8. Ground Truth AP/TS Business Registry (100% Real, Verified)
     9. OpenStreetMap Nominatim Real Geocoder
-    10. Dynamic Regional Business Harvester (Guarantees multi-locality depth for any AP & TS location)
     """
     loc_info = resolve_location_info(pincode_or_location)
     state = loc_info["state"]
@@ -3557,10 +3510,6 @@ def fetch_local_businesses(pincode_or_location: str, segment: str, query_keyword
     osm_results = fetch_nominatim_osm(query_keyword, search_target, segment, state)
     if osm_results:
         results.extend(osm_results)
-
-    # Priority 10: Dynamic Regional Business Harvester (Always merge to ensure full locality coverage)
-    dyn_results = generate_dynamic_town_leads(pincode_or_location, segment, query_keyword)
-    results.extend(dyn_results)
 
     return results
 
